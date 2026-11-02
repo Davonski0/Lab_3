@@ -1,0 +1,105 @@
+﻿anio,id_circuito,circuito,longitud_km,curvas,zonas_drs,vueltas
+2020,bahrain,Bahréin,5.412,15,3,57
+2020,catalunya,Barcelona-Cataluña,4.655,16,2,66
+2020,hungaroring,Hungaroring,4.381,14,2,70
+2020,imola,Imola,4.909,19,1,63
+2020,istanbul,Istanbul Park,5.338,14,2,58
+2020,monza,Monza,5.793,11,2,53
+2020,mugello,Mugello,5.245,15,1,59
+2020,nurburgring,Nürburgring,5.148,15,2,60
+2020,portimao,Portimão,4.653,15,2,66
+2020,red_bull_ring,Red Bull Ring,4.318,10,3,71
+2020,sakhir_outer,Sakhir Outer,3.543,11,2,87
+2020,silverstone,Silverstone,5.891,18,2,52
+2020,sochi,Sochi,5.848,18,2,53
+2020,spa,Spa-Francorchamps,7.004,19,2,44
+2020,yas_marina,Yas Marina,5.554,21,2,55
+2021,americas,COTA,5.513,20,2,56
+2021,bahrain,Bahréin,5.412,15,3,57
+2021,baku,Bakú,6.003,20,2,51
+2021,catalunya,Barcelona-Cataluña,4.675,16,2,66
+2021,hungaroring,Hungaroring,4.381,14,2,70
+2021,imola,Imola,4.909,19,1,63
+2021,interlagos,Interlagos,4.309,15,2,71
+2021,istanbul,Istanbul Park,5.338,14,2,58
+2021,jeddah,Jeddah Corniche,6.174,27,3,50
+2021,losail,Losail,5.419,16,1,57
+2021,monaco,Mónaco,3.337,19,1,78
+2021,monza,Monza,5.793,11,2,53
+2021,portimao,Portimão,4.653,15,2,66
+2021,red_bull_ring,Red Bull Ring,4.318,10,3,71
+2021,ricard,Paul Ricard,5.842,15,2,53
+2021,rodriguez,Hermanos Rodríguez,4.304,17,3,71
+2021,silverstone,Silverstone,5.891,18,2,52
+2021,sochi,Sochi,5.848,18,2,53
+2021,spa,Spa-Francorchamps,7.004,19,2,44
+2021,yas_marina,Yas Marina,5.281,16,2,58
+2021,zandvoort,Zandvoort,4.259,14,2,72
+2022,albert_park,Albert Park,5.278,14,4,58
+2022,americas,COTA,5.513,20,2,56
+2022,bahrain,Bahréin,5.412,15,3,57
+2022,baku,Bakú,6.003,20,2,51
+2022,catalunya,Barcelona-Cataluña,4.675,16,2,66
+2022,hungaroring,Hungaroring,4.381,14,2,70
+2022,imola,Imola,4.909,19,1,63
+2022,interlagos,Interlagos,4.309,15,2,71
+2022,jeddah,Jeddah Corniche,6.174,27,3,50
+2022,marina_bay,Marina Bay,5.063,23,3,61
+2022,miami,Miami,5.412,19,3,57
+2022,monaco,Mónaco,3.337,19,1,78
+2022,monza,Monza,5.793,11,2,53
+2022,red_bull_ring,Red Bull Ring,4.318,10,3,71
+2022,ricard,Paul Ricard,5.842,15,2,53
+2022,rodriguez,Hermanos Rodríguez,4.304,17,3,71
+2022,silverstone,Silverstone,5.891,18,2,52
+2022,spa,Spa-Francorchamps,7.004,19,2,44
+2022,suzuka,Suzuka,5.807,18,1,53
+2022,villeneuve,Gilles Villeneuve,4.361,14,3,70
+2022,yas_marina,Yas Marina,5.281,16,2,58
+2022,zandvoort,Zandvoort,4.259,14,2,72
+2023,albert_park,Albert Park,5.278,14,4,58
+2023,americas,COTA,5.513,20,2,56
+2023,bahrain,Bahréin,5.412,15,3,57
+2023,baku,Bakú,6.003,20,2,51
+2023,catalunya,Barcelona-Cataluña,4.657,14,2,66
+2023,hungaroring,Hungaroring,4.381,14,2,70
+2023,interlagos,Interlagos,4.309,15,2,71
+2023,jeddah,Jeddah Corniche,6.174,27,3,50
+2023,losail,Losail,5.419,16,1,57
+2023,marina_bay,Marina Bay,4.94,19,3,62
+2023,miami,Miami,5.412,19,3,57
+2023,monaco,Mónaco,3.337,19,1,78
+2023,monza,Monza,5.793,11,2,53
+2023,red_bull_ring,Red Bull Ring,4.318,10,3,71
+2023,rodriguez,Hermanos Rodríguez,4.304,17,3,71
+2023,silverstone,Silverstone,5.891,18,2,52
+2023,spa,Spa-Francorchamps,7.004,19,2,44
+2023,suzuka,Suzuka,5.807,18,1,53
+2023,vegas,Las Vegas,6.201,17,2,50
+2023,villeneuve,Gilles Villeneuve,4.361,14,3,70
+2023,yas_marina,Yas Marina,5.281,16,2,58
+2023,zandvoort,Zandvoort,4.259,14,2,72
+2024,albert_park,Albert Park,5.278,14,4,58
+2024,americas,COTA,5.513,20,2,56
+2024,bahrain,Bahréin,5.412,15,3,57
+2024,baku,Bakú,6.003,20,2,51
+2024,catalunya,Barcelona-Cataluña,4.657,14,2,66
+2024,hungaroring,Hungaroring,4.381,14,2,70
+2024,imola,Imola,4.909,19,1,63
+2024,interlagos,Interlagos,4.309,15,2,71
+2024,jeddah,Jeddah Corniche,6.174,27,3,50
+2024,losail,Losail,5.419,16,1,57
+2024,marina_bay,Marina Bay,4.94,19,4,62
+2024,miami,Miami,5.412,19,3,57
+2024,monaco,Mónaco,3.337,19,1,78
+2024,monza,Monza,5.793,11,2,53
+2024,red_bull_ring,Red Bull Ring,4.318,10,3,71
+2024,rodriguez,Hermanos Rodríguez,4.304,17,3,71
+2024,shanghai,Shanghái,5.451,16,2,56
+2024,silverstone,Silverstone,5.891,18,2,52
+2024,spa,Spa-Francorchamps,7.004,19,2,44
+2024,suzuka,Suzuka,5.807,18,1,53
+2024,vegas,Las Vegas,6.201,17,2,50
+2024,villeneuve,Gilles Villeneuve,4.361,14,3,70
+2024,yas_marina,Yas Marina,5.281,16,2,58
+2024,zandvoort,Zandvoort,4.259,14,2,72
