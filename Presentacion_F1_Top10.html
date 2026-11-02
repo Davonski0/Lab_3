@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Predicción del Top 10 en Fórmula 1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600&family=Roboto:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --fondo: #210303;
+    --rojo: #8E0C05;
+    --naranja: #E04A0F;
+    --crema: #FDF4EE;
+    --gris: #d9c6c3;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; background: #0d0101; overflow: hidden; }
+  body { font-family: 'Roboto', 'Segoe UI', Arial, sans-serif; color: var(--crema); }
+
+  #escenario { position: absolute; top: 50%; left: 50%; width: 1600px; height: 900px; }
+  .slide { position: absolute; inset: 0; background: var(--fondo); padding: 56px 64px; display: none; flex-direction: column; }
+  .slide.activa { display: flex; }
+
+  .pastilla { display: inline-block; align-self: flex-start; background: var(--rojo); color: var(--crema); font-family: 'Poppins', sans-serif; font-size: 17px; padding: 12px 34px; border-radius: 40px; }
+  h1, h2 { font-family: 'Poppins', sans-serif; font-weight: 500; line-height: 1.05; }
+  h1 { font-size: 104px; margin-top: 70px; }
+  h2 { font-size: 60px; margin: 16px 0 26px; }
+  .sub { font-family: 'Poppins', sans-serif; font-size: 30px; margin-top: 34px; }
+
+  .fila { display: flex; gap: 36px; flex: 1; min-height: 0; }
+  .col { display: flex; flex-direction: column; gap: 22px; min-height: 0; }
+  .tarjeta { background: linear-gradient(135deg, var(--rojo) 55%, var(--naranja) 130%); border-radius: 28px; padding: 32px 38px; font-size: 24px; line-height: 1.45; }
+  .tarjeta ul { padding-left: 26px; }
+  .tarjeta li { margin-bottom: 10px; }
+  .blanca { background: #fff; color: #2b1010; border-radius: 28px; padding: 22px 26px; display: flex; flex-direction: column; min-height: 0; }
+  .blanca .titulo-graf { font-family: 'Poppins', sans-serif; font-size: 20px; margin-bottom: 6px; }
+  .lectura { font-size: 19px; color: #5a2a26; min-height: 28px; margin-top: 6px; }
+  .texto { font-size: 24px; line-height: 1.5; }
+  .texto p { margin-bottom: 18px; }
+  .nota { font-size: 19px; color: var(--gris); line-height: 1.45; }
+
+  table { border-collapse: collapse; width: 100%; font-size: 23px; }
+  th, td { border: 1.5px solid rgba(253,244,238,.75); padding: 13px 18px; text-align: center; }
+  th { font-weight: 700; }
+  tr.clic { cursor: pointer; }
+  tr.clic:hover td { background: rgba(255,255,255,.10); }
+  tr.sel td { background: rgba(255,255,255,.22); }
+
+  .titulo-chico { display: inline-block; background: var(--rojo); border-radius: 40px; padding: 10px 30px; font-family: 'Poppins', sans-serif; font-size: 24px; }
+
+  .botones { display: flex; gap: 10px; margin-bottom: 8px; flex-wrap: wrap; }
+  .boton { border: 2px solid #8E0C05; background: #fff; color: #8E0C05; border-radius: 20px; padding: 6px 16px; font-size: 17px; cursor: pointer; font-family: inherit; }
+  .boton.on { background: #8E0C05; color: #fff; }
+
+  /* pipeline */
+  .pasos { display: flex; flex-direction: column; gap: 14px; }
+  .paso { background: #F4ECE8; color: #210303; border-radius: 16px; padding: 13px 20px; font-size: 20px; text-align: center; cursor: pointer; position: relative; }
+  .paso.clave { background: var(--rojo); color: #fff; font-weight: 600; }
+  .paso.sel { outline: 4px solid var(--naranja); }
+  .paso:not(:last-child)::after { content: ''; position: absolute; left: 50%; bottom: -14px; width: 2px; height: 14px; background: #fff; }
+  #detallePaso { min-height: 190px; }
+
+  /* matriz */
+  .matriz { display: grid; grid-template-columns: 150px 150px 150px; gap: 6px; font-size: 20px; text-align: center; }
+  .matriz div { padding: 14px 6px; border-radius: 10px; }
+  .matriz .enc { color: var(--gris); font-size: 17px; }
+  .matriz .bien { background: rgba(255,255,255,.85); color: #210303; font-weight: 700; font-size: 26px; }
+  .matriz .mal { background: rgba(255,255,255,.25); font-weight: 700; font-size: 26px; }
+
+  /* simulador */
+  .control { margin-bottom: 26px; font-size: 22px; }
+  .control label { display: block; margin-bottom: 8px; }
+  .control select { width: 100%; font-size: 20px; padding: 8px 10px; border-radius: 10px; border: 0; font-family: inherit; }
+  .control input[type=range] { width: 100%; accent-color: #E04A0F; }
+  .valor { font-weight: 700; }
+  #prob { font-family: 'Poppins', sans-serif; font-size: 120px; font-weight: 600; line-height: 1; }
+  .barra { height: 34px; background: rgba(255,255,255,.2); border-radius: 17px; overflow: hidden; margin: 24px 0 10px; position: relative; }
+  .barra div { height: 100%; background: #fff; border-radius: 17px; transition: width .25s; }
+  .barra span { position: absolute; left: 50%; top: -6px; bottom: -6px; width: 2px; background: var(--naranja); }
+
+  .conclusion { display: flex; gap: 28px; }
+  .conclusion .tarjeta { flex: 1; font-size: 24px; }
+  .conclusion .num { font-family: 'Poppins', sans-serif; font-size: 54px; font-weight: 600; line-height: 1; margin-bottom: 14px; }
+
+  .pie { position: absolute; right: 54px; bottom: 30px; font-size: 18px; color: var(--gris); font-family: 'Poppins', sans-serif; }
+  svg text { font-family: 'Roboto', Arial, sans-serif; }
+
+  #controles { position: fixed; bottom: 14px; left: 50%; transform: translateX(-50%); display: flex; gap: 10px; align-items: center; background: rgba(0,0,0,.55); border-radius: 30px; padding: 6px 12px; font-size: 15px; color: #fff; opacity: .25; transition: opacity .2s; }
+  #controles:hover { opacity: 1; }
+  #controles button { background: var(--rojo); color: #fff; border: 0; border-radius: 20px; padding: 7px 14px; font-size: 15px; cursor: pointer; }
+</style>
+</head>
+<body>
+<div id="escenario">
+
+  <!-- 1 -->
+  <section class="slide">
+    <span class="pastilla">Alexa Bojorquez V - David Farias R</span>
+    <h1>Predicción del Top 10<br>en Fórmula 1</h1>
+    <div class="sub">Comparación de modelos de clasificación con optimización bayesiana</div>
+    <div class="fila" style="margin-top: 50px; flex: 0 0 auto;">
+      <div class="tarjeta" style="flex: 1.25;">
+        <ul>
+          <li>Preparar y explorar los resultados de 2020 a 2024.</li>
+          <li>Comparar regresión logística, SVC RBF y MLP.</li>
+          <li>Optimizar hiperparámetros con procesos gaussianos.</li>
+          <li>Evaluar con ROC-AUC y contra usar solo la posición de salida.</li>
+        </ul>
+      </div>
+      <div class="col" style="flex: 1;">
+        <span class="titulo-chico" style="align-self: flex-start;">Problema</span>
+        <div class="texto">Predecir si un piloto termina dentro (1) o fuera (0) del Top 10 de una carrera, usando solo información que se conoce antes de la salida.</div>
+      </div>
+    </div>
+    <div class="pie">1</div>
+  </section>
+
+  <!-- 2 -->
+  <section class="slide">
+    <span class="pastilla">F1 - Top 10</span>
+    <h2>Dataset</h2>
+    <div class="fila">
+      <div class="col" style="flex: 0.75;">
+        <div class="tarjeta">
+          <table>
+            <tr><th>Característica</th><th>Resultado</th></tr>
+            <tr><td>Fuente</td><td>API Jolpica (antes Ergast)</td></tr>
+            <tr><td>Temporadas</td><td>2020 a 2024</td></tr>
+            <tr><td>Participaciones</td><td>2,139</td></tr>
+            <tr><td>Carreras</td><td>107</td></tr>
+            <tr><td>Top 10 / fuera</td><td>1,070 / 1,069</td></tr>
+          </table>
+        </div>
+        <div class="nota">Revisamos 8 carreras contra la API y las 159 filas coinciden. Las características de los circuitos vienen de otro archivo.</div>
+      </div>
+      <div class="blanca" style="flex: 1.25;">
+        <div class="titulo-graf">Porcentaje que termina en el Top 10 según su lugar de salida</div>
+        <svg id="grafSalida" viewBox="0 0 860 470" style="flex: 1; width: 100%;"></svg>
+        <div class="lectura" id="lecturaSalida">Pasa el cursor sobre una barra.</div>
+      </div>
+    </div>
+    <div class="pie">2</div>
+  </section>
+
+  <!-- 3 -->
+  <section class="slide">
+    <span class="pastilla">F1 - Top 10</span>
+    <h2>Variables y decisiones</h2>
+    <div class="fila">
+      <div class="col" style="flex: 1;">
+        <div class="tarjeta">
+          <table>
+            <tr><th>Tipo</th><th>Variables</th><th>Transformación</th></tr>
+            <tr><td>Categóricas</td><td>piloto, escudería</td><td>OneHotEncoder</td></tr>
+            <tr><td>Numéricas</td><td>posición de salida,<br>puntos de la escudería</td><td>StandardScaler</td></tr>
+            <tr><td>Objetivo</td><td>Top 10</td><td>Binaria: 0 o 1</td></tr>
+          </table>
+        </div>
+      </div>
+      <div class="col texto" style="flex: 1; font-size: 23px;">
+        <p><b>Salida desde pits = lugar 21.</b> En los datos venía como 0, y el modelo lo hubiera leído como mejor que salir primero.</p>
+        <p><b>Unificamos escuderías.</b> AlphaTauri pasó a llamarse RB y Alfa Romeo a Sauber. Sin esto, 1 de cada 5 filas de 2024 tenía un equipo que el modelo no conocía.</p>
+        <p><b>Nueva variable.</b> Puntos promedio por carrera de la escudería en la temporada, contando solo las carreras anteriores.</p>
+        <p><b>Sin variables del circuito.</b> Son iguales para los 20 pilotos de una carrera. Solas dan un AUC de 0.443 y al agregarlas bajaba la validación cruzada.</p>
+      </div>
+    </div>
+    <div class="pie">3</div>
+  </section>
+
+  <!-- 4 -->
+  <section class="slide">
+    <span class="pastilla">F1 - Top 10</span>
+    <div class="fila" style="margin-top: 14px;">
+      <div class="col" style="flex: 0.85;">
+        <h2 style="margin-top: 0;">Pipeline</h2>
+        <div class="texto">
+          <p>Reservamos 2024 como prueba final. Los modelos se ajustaron y eligieron solo con 2020 a 2023.</p>
+          <p>Entrenamiento: 1,660 participaciones (830 y 830)<br>Prueba: 479 participaciones (240 y 239)</p>
+        </div>
+        <div class="tarjeta" id="detallePaso" style="font-size: 22px;">Da clic en un paso del diagrama para ver qué hicimos.</div>
+      </div>
+      <div class="col" style="flex: 1.15; justify-content: center;">
+        <div class="pasos" id="pasos"></div>
+      </div>
+    </div>
+    <div class="pie">4</div>
+  </section>
+
+  <!-- 5 -->
+  <section class="slide">
+    <span class="pastilla">F1 - Top 10</span>
+    <h2>Optimización bayesiana</h2>
+    <div class="fila">
+      <div class="tarjeta" style="flex: 0.7; font-size: 22px;">
+        <p style="margin-bottom: 22px;">En cada modelo evaluamos 35 configuraciones: 5 al azar y 30 elegidas por el proceso gaussiano con la media + 2 desviaciones.</p>
+        <p style="margin-bottom: 14px;"><b>Logística:</b> C = 0.146<br>ROC-AUC 0.851</p>
+        <p style="margin-bottom: 14px;"><b>SVC RBF:</b> C = 2.71, gamma = 0.0017<br>ROC-AUC 0.849</p>
+        <p style="margin-bottom: 14px;"><b>MLP:</b> 11 neuronas, alpha = 0.093<br>ROC-AUC 0.849</p>
+        <p style="font-size: 20px;">Donde más ayudó la búsqueda fue en el SVC, que subió de 0.839 a 0.849.</p>
+      </div>
+      <div class="blanca" style="flex: 1.3;">
+        <div class="botones" id="botonesBusqueda"></div>
+        <div class="titulo-graf">Mejor ROC-AUC encontrado hasta cada configuración</div>
+        <svg id="grafBusqueda" viewBox="0 0 900 470" style="flex: 1; width: 100%;"></svg>
+        <div class="lectura" id="lecturaBusqueda">Pasa el cursor sobre la gráfica para ver cada configuración.</div>
+      </div>
+    </div>
+    <div class="pie">5</div>
+  </section>
+
+  <!-- 6 -->
+  <section class="slide">
+    <span class="pastilla">F1 - Top 10</span>
+    <h2>Validación cruzada (5 folds)</h2>
+    <div class="fila">
+      <div class="blanca" style="flex: 1.3;">
+        <div class="titulo-graf">ROC-AUC promedio y desviación estándar (2020 a 2023)</div>
+        <svg id="grafCV" viewBox="0 0 900 520" style="flex: 1; width: 100%;"></svg>
+        <div class="lectura" id="lecturaCV">Da clic en un modelo para ver sus 5 folds.</div>
+      </div>
+      <div class="col texto" style="flex: 0.7; justify-content: center;">
+        <p>Los tres modelos quedan empatados: la diferencia es de 0.002, menor que lo que cambia entre folds.</p>
+        <p>Los tres le ganan por 0.036 a usar solo la posición de salida (0.813).</p>
+        <p>Elegimos la logística antes de ver 2024, por tener la media más alta y ser la más simple.</p>
+      </div>
+    </div>
+    <div class="pie">6</div>
+  </section>
+
+  <!-- 7 -->
+  <section class="slide">
+    <span class="pastilla">F1 - Top 10</span>
+    <h2>Prueba en la temporada 2024</h2>
+    <div class="fila">
+      <div class="col" style="flex: 1.05;">
+        <div class="tarjeta">
+          <table id="tablaTest" style="font-size: 24px;">
+            <tr><th>Modelo</th><th>ROC-AUC</th><th>Accuracy</th></tr>
+          </table>
+        </div>
+        <div class="nota">Da clic en un modelo para ver su matriz de confusión. Son 479 participaciones que el modelo nunca vio.</div>
+      </div>
+      <div class="col" style="flex: 0.95;">
+        <div id="matriz"></div>
+        <div class="texto" style="font-size: 22px;">
+          <p>En 2024 la ventaja casi desaparece: la logística le gana a la posición de salida solo por 0.003 y ningún modelo la supera en accuracy.</p>
+          <p>Creemos que piloto y escudería aprenden el historial de 2020 a 2023, que no se repite igual en 2024. No cambiamos la elección al SVC, porque eso sería elegir con la prueba.</p>
+        </div>
+      </div>
+    </div>
+    <div class="pie">7</div>
+  </section>
+
+  <!-- 8 -->
+  <section class="slide">
+    <span class="pastilla">F1 - Top 10</span>
+    <h2>¿Qué se asocia más con el Top 10?</h2>
+    <div class="fila">
+      <div class="blanca" style="flex: 1.3;">
+        <div class="botones">
+          <button class="boton on" id="verTop" type="button">Las 10 con más peso</button>
+          <button class="boton" id="verTodas" type="button">Todas</button>
+        </div>
+        <svg id="grafCoef" viewBox="0 0 900 560" style="flex: 1; width: 100%;"></svg>
+        <div class="lectura" id="lecturaCoef">Pasa el cursor sobre una barra.</div>
+      </div>
+      <div class="col texto" style="flex: 0.7; justify-content: center;">
+        <p>La posición de salida y los puntos de la escudería son de lo que más pesa.</p>
+        <p>Los coeficientes de piloto y escudería muestran quién termina mejor o peor de lo que su salida haría esperar. Haas y Williams quedan abajo y Norris arriba.</p>
+        <p class="nota">Son coeficientes de la regresión logística: indican asociación, no causa.</p>
+      </div>
+    </div>
+    <div class="pie">8</div>
+  </section>
+
+  <!-- 9 -->
+  <section class="slide">
+    <span class="pastilla">F1 - Top 10</span>
+    <h2>Pruébalo con el modelo</h2>
+    <div class="fila">
+      <div class="col" style="flex: 1;">
+        <div class="control">
+          <label>Piloto</label>
+          <select id="selPiloto"></select>
+        </div>
+        <div class="control">
+          <label>Escudería</label>
+          <select id="selEsc"></select>
+        </div>
+        <div class="control">
+          <label>Posición de salida: <span class="valor" id="txtSalida"></span></label>
+          <input type="range" id="rngSalida" min="1" max="21" step="1" value="10">
+        </div>
+        <div class="control">
+          <label>Puntos promedio de la escudería en la temporada: <span class="valor" id="txtPuntos"></span></label>
+          <input type="range" id="rngPuntos" min="0" max="44" step="0.5" value="8">
+        </div>
+      </div>
+      <div class="tarjeta" style="flex: 1; display: flex; flex-direction: column; justify-content: center;">
+        <div style="font-size: 24px;">Probabilidad de terminar en el Top 10</div>
+        <div id="prob">50 %</div>
+        <div class="barra"><div id="barraProb"></div><span></span></div>
+        <div style="font-size: 18px; color: var(--gris);">La línea naranja marca el 50 %, que es el umbral del modelo.</div>
+        <div id="veredicto" style="font-size: 30px; margin-top: 22px; font-family: 'Poppins', sans-serif;"></div>
+        <div class="nota" style="margin-top: 22px;">Usa la regresión logística elegida, entrenada con 2020 a 2023.</div>
+      </div>
+    </div>
+    <div class="pie">9</div>
+  </section>
+
+  <!-- 10 -->
+  <section class="slide">
+    <span class="pastilla">F1 - Top 10</span>
+    <h2>Conclusiones</h2>
+    <div class="conclusion">
+      <div class="tarjeta">
+        <div class="num">0.85</div>
+        Ningún modelo es claramente mejor: los tres quedan empatados en validación cruzada.
+      </div>
+      <div class="tarjeta">
+        <div class="num">+0.036</div>
+        Con los puntos de la escudería superamos a la posición de salida sola en validación cruzada.
+      </div>
+      <div class="tarjeta">
+        <div class="num">+0.003</div>
+        En una temporada nueva la mejora es mínima: la posición de salida explica casi todo lo que se puede predecir antes de la carrera.
+      </div>
+    </div>
+    <div class="texto" style="margin-top: 40px; font-size: 22px;">
+      <p><b>Limitaciones:</b> una sola temporada de prueba, puntos aproximados (sin sprints) y no incluimos clima, averías ni accidentes.</p>
+      <p><b>Código y datos:</b> github.com/[usuario]/prediccion-top10-f1</p>
+    </div>
+    <div class="pie">10</div>
+  </section>
+
+</div>
+
+<div id="controles">
+  <button id="ant" type="button">Anterior</button>
+  <span id="contador"></span>
+  <button id="sig" type="button">Siguiente</button>
+  <button id="pantalla" type="button">Pantalla completa</button>
+</div>
+
+<script id="datos" type="application/json">{"salida": [{"pos": 1, "pct": 88.8, "n": 107}, {"pos": 2, "pct": 88.8, "n": 107}, {"pos": 3, "pct": 86.9, "n": 107}, {"pos": 4, "pct": 86.0, "n": 107}, {"pos": 5, "pct": 78.5, "n": 107}, {"pos": 6, "pct": 83.2, "n": 107}, {"pos": 7, "pct": 71.7, "n": 106}, {"pos": 8, "pct": 67.9, "n": 106}, {"pos": 9, "pct": 63.6, "n": 107}, {"pos": 10, "pct": 53.8, "n": 106}, {"pos": 11, "pct": 47.2, "n": 106}, {"pos": 12, "pct": 37.4, "n": 107}, {"pos": 13, "pct": 33.3, "n": 105}, {"pos": 14, "pct": 21.7, "n": 106}, {"pos": 15, "pct": 24.5, "n": 106}, {"pos": 16, "pct": 17.9, "n": 106}, {"pos": 17, "pct": 10.3, "n": 107}, {"pos": 18, "pct": 12.4, "n": 105}, {"pos": 19, "pct": 14.2, "n": 106}, {"pos": 20, "pct": 14.0, "n": 86}, {"pos": 21, "pct": 15.6, "n": 32}], "busqueda": {"Logística": {"mejor": [0.8479, 0.8479, 0.8479, 0.8479, 0.8483, 0.8505, 0.8505, 0.8505, 0.8505, 0.8505, 0.8505, 0.8505, 0.8505, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506, 0.8506], "valor": [0.8479, 0.8471, 0.8472, 0.8474, 0.8483, 0.8505, 0.8495, 0.8503, 0.849, 0.8476, 0.8479, 0.8473, 0.8473, 0.8506, 0.8499, 0.8494, 0.8486, 0.8475, 0.8471, 0.8479, 0.8475, 0.8486, 0.8481, 0.8505, 0.8505, 0.8497, 0.8502, 0.8504, 0.8502, 0.8498, 0.8499, 0.8501, 0.8493, 0.8493, 0.85]}, "SVC RBF": {"mejor": [0.8003, 0.8298, 0.8354, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.8392, 0.841, 0.841, 0.8492, 0.8492, 0.8492, 0.8492, 0.8492, 0.8492, 0.8492, 0.8492, 0.8492, 0.8492, 0.8492, 0.8492, 0.8492], "valor": [0.8003, 0.8298, 0.8354, 0.8392, 0.8163, 0.8118, 0.8049, 0.7984, 0.8298, 0.8135, 0.8287, 0.8256, 0.8288, 0.8303, 0.8306, 0.8305, 0.8261, 0.8341, 0.8291, 0.8221, 0.841, 0.8178, 0.8492, 0.829, 0.8269, 0.8156, 0.8387, 0.8047, 0.8341, 0.8223, 0.827, 0.8281, 0.8291, 0.8491, 0.835]}, "MLP": {"mejor": [0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485, 0.8485], "valor": [0.8485, 0.8428, 0.8383, 0.8391, 0.8432, 0.8434, 0.8431, 0.8455, 0.8466, 0.8466, 0.8467, 0.8438, 0.8442, 0.8441, 0.846, 0.841, 0.8482, 0.8478, 0.8476, 0.8459, 0.8445, 0.8414, 0.8448, 0.8428, 0.8462, 0.842, 0.839, 0.8376, 0.8406, 0.8402, 0.8483, 0.8479, 0.8462, 0.8468, 0.8485]}}, "cv": [{"modelo": "Logística", "media": 0.8506, "desv": 0.0141, "base": 0.8488, "folds": [0.8337, 0.8658, 0.8644, 0.8467, 0.8422]}, {"modelo": "SVC RBF", "media": 0.8492, "desv": 0.0147, "base": 0.8353, "folds": [0.8301, 0.8637, 0.8643, 0.8437, 0.844]}, {"modelo": "MLP", "media": 0.8485, "desv": 0.0172, "base": 0.8446, "folds": [0.8387, 0.8687, 0.855, 0.8557, 0.8244]}], "ref_cv": {"media": 0.8129, "desv": 0.0158}, "test": [{"modelo": "Solo posición de salida", "auc": 0.8891, "acc": 0.8372, "prec": 0.8375, "rec": 0.8375, "tn": 200, "fp": 39, "fn": 39, "tp": 201}, {"modelo": "Logística", "auc": 0.8919, "acc": 0.8121, "prec": 0.8233, "rec": 0.7958, "tn": 198, "fp": 41, "fn": 49, "tp": 191}, {"modelo": "SVC RBF", "auc": 0.9041, "acc": 0.8267, "prec": 0.8458, "rec": 0.8, "tn": 204, "fp": 35, "fn": 48, "tp": 192}, {"modelo": "MLP", "auc": 0.8863, "acc": 0.8246, "prec": 0.825, "rec": 0.825, "tn": 197, "fp": 42, "fn": 42, "tp": 198}], "modelo": {"b0": -0.07942933894850289, "media": [10.565662650602409, 9.613253012048192], "desv": [5.839821892970458, 10.784936629789367], "b_salida": -0.8384020038870166, "b_puntos": 0.4164829563636383, "esc": {"Alpine F1 Team": 0.5015, "Aston Martin": 0.4284, "Ferrari": 0.2846, "Haas F1 Team": -0.8774, "McLaren": 0.2186, "Mercedes": 0.3842, "RB F1 Team": -0.1065, "Red Bull": 0.1877, "Sauber": -0.3416, "Williams": -0.6993}, "pil": {"Alexander Albon": 0.1374, "Antonio Giovinazzi": -0.2396, "Carlos Sainz": 0.3218, "Charles Leclerc": 0.1109, "Daniel Ricciardo": -0.0995, "Daniil Kvyat": 0.0837, "Esteban Ocon": 0.2459, "Fernando Alonso": 0.3038, "George Russell": 0.0405, "Guanyu Zhou": -0.2792, "Jack Aitken": -0.0152, "Kevin Magnussen": 0.0742, "Kimi Räikkönen": -0.0647, "Lance Stroll": -0.0505, "Lando Norris": 0.6249, "Lewis Hamilton": 0.444, "Liam Lawson": -0.0474, "Logan Sargeant": -0.2021, "Max Verstappen": 0.148, "Mick Schumacher": -0.3295, "Nicholas Latifi": -0.3298, "Nico Hülkenberg": -0.3155, "Nikita Mazepin": -0.2071, "Nyck de Vries": -0.1501, "Oscar Piastri": -0.0691, "Pierre Gasly": 0.1612, "Pietro Fittipaldi": -0.0218, "Robert Kubica": -0.042, "Romain Grosjean": -0.0619, "Sebastian Vettel": -0.1509, "Sergio Pérez": 0.3183, "Valtteri Bottas": -0.2138, "Yuki Tsunoda": -0.1447}}, "coef": [{"nombre": "Escudería: Haas F1 Team", "valor": -0.877}, {"nombre": "Posición de salida", "valor": -0.838}, {"nombre": "Escudería: Williams", "valor": -0.699}, {"nombre": "Escudería: Sauber", "valor": -0.342}, {"nombre": "Nicholas Latifi", "valor": -0.33}, {"nombre": "Mick Schumacher", "valor": -0.33}, {"nombre": "Nico Hülkenberg", "valor": -0.315}, {"nombre": "Guanyu Zhou", "valor": -0.279}, {"nombre": "Antonio Giovinazzi", "valor": -0.24}, {"nombre": "Valtteri Bottas", "valor": -0.214}, {"nombre": "Nikita Mazepin", "valor": -0.207}, {"nombre": "Logan Sargeant", "valor": -0.202}, {"nombre": "Sebastian Vettel", "valor": -0.151}, {"nombre": "Nyck de Vries", "valor": -0.15}, {"nombre": "Yuki Tsunoda", "valor": -0.145}, {"nombre": "Escudería: RB F1 Team", "valor": -0.106}, {"nombre": "Daniel Ricciardo", "valor": -0.1}, {"nombre": "Oscar Piastri", "valor": -0.069}, {"nombre": "Kimi Räikkönen", "valor": -0.065}, {"nombre": "Romain Grosjean", "valor": -0.062}, {"nombre": "Lance Stroll", "valor": -0.051}, {"nombre": "Liam Lawson", "valor": -0.047}, {"nombre": "Robert Kubica", "valor": -0.042}, {"nombre": "Pietro Fittipaldi", "valor": -0.022}, {"nombre": "Jack Aitken", "valor": -0.015}, {"nombre": "George Russell", "valor": 0.04}, {"nombre": "Kevin Magnussen", "valor": 0.074}, {"nombre": "Daniil Kvyat", "valor": 0.084}, {"nombre": "Charles Leclerc", "valor": 0.111}, {"nombre": "Alexander Albon", "valor": 0.137}, {"nombre": "Max Verstappen", "valor": 0.148}, {"nombre": "Pierre Gasly", "valor": 0.161}, {"nombre": "Escudería: Red Bull", "valor": 0.188}, {"nombre": "Escudería: McLaren", "valor": 0.219}, {"nombre": "Esteban Ocon", "valor": 0.246}, {"nombre": "Escudería: Ferrari", "valor": 0.285}, {"nombre": "Fernando Alonso", "valor": 0.304}, {"nombre": "Sergio Pérez", "valor": 0.318}, {"nombre": "Carlos Sainz", "valor": 0.322}, {"nombre": "Escudería: Mercedes", "valor": 0.384}, {"nombre": "Puntos de la escudería", "valor": 0.416}, {"nombre": "Escudería: Aston Martin", "valor": 0.428}, {"nombre": "Lewis Hamilton", "valor": 0.444}, {"nombre": "Escudería: Alpine F1 Team", "valor": 0.502}, {"nombre": "Lando Norris", "valor": 0.625}], "pilotos2024": [{"piloto": "Esteban Ocon", "esc": "Alpine F1 Team"}, {"piloto": "Jack Doohan", "esc": "Alpine F1 Team"}, {"piloto": "Pierre Gasly", "esc": "Alpine F1 Team"}, {"piloto": "Fernando Alonso", "esc": "Aston Martin"}, {"piloto": "Lance Stroll", "esc": "Aston Martin"}, {"piloto": "Carlos Sainz", "esc": "Ferrari"}, {"piloto": "Charles Leclerc", "esc": "Ferrari"}, {"piloto": "Kevin Magnussen", "esc": "Haas F1 Team"}, {"piloto": "Nico Hülkenberg", "esc": "Haas F1 Team"}, {"piloto": "Oliver Bearman", "esc": "Haas F1 Team"}, {"piloto": "Lando Norris", "esc": "McLaren"}, {"piloto": "Oscar Piastri", "esc": "McLaren"}, {"piloto": "George Russell", "esc": "Mercedes"}, {"piloto": "Lewis Hamilton", "esc": "Mercedes"}, {"piloto": "Daniel Ricciardo", "esc": "RB F1 Team"}, {"piloto": "Liam Lawson", "esc": "RB F1 Team"}, {"piloto": "Yuki Tsunoda", "esc": "RB F1 Team"}, {"piloto": "Max Verstappen", "esc": "Red Bull"}, {"piloto": "Sergio Pérez", "esc": "Red Bull"}, {"piloto": "Guanyu Zhou", "esc": "Sauber"}, {"piloto": "Valtteri Bottas", "esc": "Sauber"}, {"piloto": "Alexander Albon", "esc": "Williams"}, {"piloto": "Franco Colapinto", "esc": "Williams"}, {"piloto": "Logan Sargeant", "esc": "Williams"}], "esc2024": ["Alpine F1 Team", "Aston Martin", "Ferrari", "Haas F1 Team", "McLaren", "Mercedes", "RB F1 Team", "Red Bull", "Sauber", "Williams"], "puntos_max": 43.0}</script>
+<script>
+var D = JSON.parse(document.getElementById('datos').textContent);
+var NS = 'http://www.w3.org/2000/svg';
+var colores = { 'Logística': '#1f77b4', 'SVC RBF': '#ff7f0e', 'MLP': '#2ca02c' };
+
+function el(tag, attrs, padre) {
+  var e = document.createElementNS(NS, tag);
+  for (var k in attrs) e.setAttribute(k, attrs[k]);
+  if (padre) padre.appendChild(e);
+  return e;
+}
+function texto(t, attrs, padre) {
+  var e = el('text', attrs, padre);
+  e.textContent = t;
+  return e;
+}
+function nombreSalida(p) {
+  if (p == 21) return 'desde pits';
+  return 'en el lugar ' + p;
+}
+
+/* ---------- navegacion ---------- */
+var slides = document.querySelectorAll('.slide');
+var actual = 0;
+function mostrar(n) {
+  if (n < 0) n = 0;
+  if (n > slides.length - 1) n = slides.length - 1;
+  slides[actual].classList.remove('activa');
+  actual = n;
+  slides[actual].classList.add('activa');
+  document.getElementById('contador').textContent = (actual + 1) + ' / ' + slides.length;
+}
+function ajustar() {
+  var escala = Math.min(window.innerWidth / 1600, window.innerHeight / 900);
+  document.getElementById('escenario').style.transform = 'translate(-50%, -50%) scale(' + escala + ')';
+}
+document.addEventListener('keydown', function (e) {
+  if (e.target.tagName == 'SELECT' || e.target.tagName == 'INPUT') return;
+  if (e.key == 'ArrowRight' || e.key == 'PageDown' || e.key == ' ') { e.preventDefault(); mostrar(actual + 1); }
+  if (e.key == 'ArrowLeft' || e.key == 'PageUp') { e.preventDefault(); mostrar(actual - 1); }
+});
+document.getElementById('sig').onclick = function () { mostrar(actual + 1); };
+document.getElementById('ant').onclick = function () { mostrar(actual - 1); };
+document.getElementById('pantalla').onclick = function () {
+  try {
+    if (document.fullscreenElement) document.exitFullscreen();
+    else document.documentElement.requestFullscreen().catch(function () {});
+  } catch (err) {}
+};
+window.addEventListener('resize', ajustar);
+
+/* ---------- 2: salida ---------- */
+(function () {
+  var svg = document.getElementById('grafSalida');
+  var x0 = 60, y0 = 420, ancho = 780, alto = 390;
+  for (var v = 0; v <= 100; v += 25) {
+    var y = y0 - v / 100 * alto;
+    el('line', { x1: x0, x2: x0 + ancho, y1: y, y2: y, stroke: '#e5dcdb' }, svg);
+    texto(v + '%', { x: x0 - 8, y: y + 5, 'text-anchor': 'end', 'font-size': 14, fill: '#6b4a47' }, svg);
+  }
+  el('line', { x1: x0, x2: x0 + ancho, y1: y0 - 0.5 * alto, y2: y0 - 0.5 * alto, stroke: '#999', 'stroke-dasharray': '6 5' }, svg);
+  var paso = ancho / D.salida.length;
+  var lectura = document.getElementById('lecturaSalida');
+  D.salida.forEach(function (s, i) {
+    var h = s.pct / 100 * alto;
+    var color = s.pos <= 10 ? '#8E0C05' : '#c9a9a6';
+    var r = el('rect', { x: x0 + i * paso + 4, y: y0 - h, width: paso - 8, height: h, fill: color, rx: 3 }, svg);
+    texto(s.pos == 21 ? 'Pits' : s.pos, { x: x0 + i * paso + paso / 2, y: y0 + 22, 'text-anchor': 'middle', 'font-size': 14, fill: '#6b4a47' }, svg);
+    r.addEventListener('mouseenter', function () {
+      r.setAttribute('fill', '#E04A0F');
+      lectura.textContent = 'Saliendo ' + nombreSalida(s.pos) + ', el ' + s.pct + ' % terminó en el Top 10 (' + s.n + ' participaciones).';
+    });
+    r.addEventListener('mouseleave', function () { r.setAttribute('fill', color); });
+  });
+  texto('Posición de salida', { x: x0 + ancho / 2, y: y0 + 46, 'text-anchor': 'middle', 'font-size': 15, fill: '#6b4a47' }, svg);
+})();
+
+/* ---------- 4: pipeline ---------- */
+(function () {
+  var pasos = [
+    ['CSV de resultados + CSV de circuitos', 'Los resultados vienen de la API Jolpica (la que reemplazó a Ergast). El archivo de circuitos trae longitud, curvas, zonas DRS y vueltas por año.', false],
+    ['Revisar faltantes y duplicados, unir por año y circuito', 'No hubo faltantes ni pilotos repetidos en una carrera. Unimos por año e identificador del circuito y las 2,139 filas coincidieron.', false],
+    ['Limpieza de salida y escuderías', 'La salida desde pits (0 en la API) pasó a ser el lugar 21. Juntamos los equipos que cambiaron de nombre, como AlphaTauri y RB o Alfa Romeo y Sauber.', true],
+    ['Nueva variable: puntos de la escudería', 'Para cada carrera calculamos los puntos promedio que llevaba la escudería en esa temporada, usando solo las carreras anteriores. En la primera carrera vale 0.', true],
+    ['Entrenamiento 2020 a 2023, prueba 2024', 'Toda la búsqueda y la elección del modelo se hizo con 2020 a 2023. 2024 solo se usó al final.', false],
+    ['Escalar numéricas y OneHot en piloto y escudería', 'Con ColumnTransformer dentro del pipeline, así el escalamiento se aprende solo con los datos de entrenamiento de cada fold.', false],
+    ['Logística, SVC RBF y MLP', 'Los tres modelos usan las mismas cuatro variables y las mismas transformaciones.', false],
+    ['Proceso gaussiano con 35 configuraciones', 'Cada configuración se calificó con el ROC-AUC promedio de 5 folds estratificados.', false],
+    ['Mejor configuración y evaluación en 2024', 'Ajustamos cada modelo con todo 2020 a 2023 y lo evaluamos una sola vez en 2024.', false]
+  ];
+  var cont = document.getElementById('pasos');
+  var detalle = document.getElementById('detallePaso');
+  var divs = [];
+  pasos.forEach(function (p, i) {
+    var d = document.createElement('div');
+    d.className = 'paso' + (p[2] ? ' clave' : '');
+    d.textContent = p[0];
+    d.onclick = function () {
+      divs.forEach(function (x) { x.classList.remove('sel'); });
+      d.classList.add('sel');
+      detalle.innerHTML = '<b>Paso ' + (i + 1) + '.</b> ' + p[1];
+    };
+    cont.appendChild(d);
+    divs.push(d);
+  });
+})();
+
+/* ---------- 5: busqueda ---------- */
+(function () {
+  var svg = document.getElementById('grafBusqueda');
+  var x0 = 70, y0 = 420, ancho = 800, alto = 390, ymin = 0.79, ymax = 0.86;
+  var visibles = { 'Logística': true, 'SVC RBF': true, 'MLP': true };
+  function px(i) { return x0 + (i - 1) / 34 * ancho; }
+  function py(v) { return y0 - (v - ymin) / (ymax - ymin) * alto; }
+  function dibujar() {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    for (var v = 0.79; v <= 0.8601; v += 0.01) {
+      el('line', { x1: x0, x2: x0 + ancho, y1: py(v), y2: py(v), stroke: '#e5dcdb' }, svg);
+      texto(v.toFixed(2), { x: x0 - 8, y: py(v) + 5, 'text-anchor': 'end', 'font-size': 14, fill: '#6b4a47' }, svg);
+    }
+    for (var i = 5; i <= 35; i += 5) texto(i, { x: px(i), y: y0 + 22, 'text-anchor': 'middle', 'font-size': 14, fill: '#6b4a47' }, svg);
+    texto('Configuraciones evaluadas', { x: x0 + ancho / 2, y: y0 + 46, 'text-anchor': 'middle', 'font-size': 15, fill: '#6b4a47' }, svg);
+    el('line', { x1: px(5), x2: px(5), y1: y0, y2: y0 - alto, stroke: '#888', 'stroke-dasharray': '6 5' }, svg);
+    texto('fin de las 5 al azar', { x: px(5) + 6, y: y0 - alto + 14, 'font-size': 13, fill: '#888' }, svg);
+    for (var nom in D.busqueda) {
+      if (!visibles[nom]) continue;
+      var puntos = '';
+      var serie = D.busqueda[nom].mejor;
+      for (var j = 0; j < serie.length; j++) puntos += px(j + 1) + ',' + py(Math.max(serie[j], ymin)) + ' ';
+      el('polyline', { points: puntos, fill: 'none', stroke: colores[nom], 'stroke-width': 3.5 }, svg);
+    }
+    var guia = el('line', { x1: 0, x2: 0, y1: y0, y2: y0 - alto, stroke: '#210303', 'stroke-width': 1, visibility: 'hidden' }, svg);
+    var capa = el('rect', { x: x0, y: y0 - alto, width: ancho, height: alto, fill: 'transparent' }, svg);
+    capa.addEventListener('mousemove', function (e) {
+      var r = svg.getBoundingClientRect();
+      var xsvg = (e.clientX - r.left) / r.width * 900;
+      var k = Math.round((xsvg - x0) / ancho * 34) + 1;
+      if (k < 1) k = 1;
+      if (k > 35) k = 35;
+      guia.setAttribute('x1', px(k));
+      guia.setAttribute('x2', px(k));
+      guia.setAttribute('visibility', 'visible');
+      var partes = [];
+      for (var nom in D.busqueda) {
+        if (visibles[nom]) partes.push(nom + ': ' + D.busqueda[nom].valor[k - 1].toFixed(3) + ' (mejor ' + D.busqueda[nom].mejor[k - 1].toFixed(3) + ')');
+      }
+      document.getElementById('lecturaBusqueda').textContent = 'Configuración ' + k + '. ' + partes.join('   ');
+    });
+  }
+  var botones = document.getElementById('botonesBusqueda');
+  Object.keys(D.busqueda).forEach(function (nom) {
+    var b = document.createElement('button');
+    b.className = 'boton on';
+    b.type = 'button';
+    b.textContent = nom;
+    b.style.borderColor = colores[nom];
+    b.style.background = colores[nom];
+    b.onclick = function () {
+      visibles[nom] = !visibles[nom];
+      b.classList.toggle('on');
+      b.style.background = visibles[nom] ? colores[nom] : '#fff';
+      b.style.color = visibles[nom] ? '#fff' : colores[nom];
+      dibujar();
+    };
+    botones.appendChild(b);
+  });
+  dibujar();
+})();
+
+/* ---------- 6: validacion cruzada ---------- */
+(function () {
+  var svg = document.getElementById('grafCV');
+  var x0 = 80, y0 = 460, ancho = 780, alto = 420, ymin = 0.80, ymax = 0.88;
+  function py(v) { return y0 - (v - ymin) / (ymax - ymin) * alto; }
+  for (var v = 0.80; v <= 0.8801; v += 0.02) {
+    el('line', { x1: x0, x2: x0 + ancho, y1: py(v), y2: py(v), stroke: '#e5dcdb' }, svg);
+    texto(v.toFixed(2), { x: x0 - 8, y: py(v) + 5, 'text-anchor': 'end', 'font-size': 14, fill: '#6b4a47' }, svg);
+  }
+  el('line', { x1: x0, x2: x0 + ancho, y1: py(D.ref_cv.media), y2: py(D.ref_cv.media), stroke: '#210303', 'stroke-width': 2, 'stroke-dasharray': '8 6' }, svg);
+  texto('Solo posición de salida: 0.813', { x: x0 + ancho - 4, y: py(D.ref_cv.media) + 22, 'text-anchor': 'end', 'font-size': 15, fill: '#210303' }, svg);
+  var lectura = document.getElementById('lecturaCV');
+  var capaFolds = el('g', {}, svg);
+  D.cv.forEach(function (m, i) {
+    var cx = x0 + ancho * (i + 0.5) / 3;
+    var g = el('g', { style: 'cursor: pointer' }, svg);
+    el('rect', { x: cx - 110, y: y0 - alto, width: 220, height: alto, fill: 'transparent' }, g);
+    el('line', { x1: cx, x2: cx, y1: py(m.media - m.desv), y2: py(m.media + m.desv), stroke: '#8E0C05', 'stroke-width': 3 }, g);
+    el('line', { x1: cx - 16, x2: cx + 16, y1: py(m.media - m.desv), y2: py(m.media - m.desv), stroke: '#8E0C05', 'stroke-width': 3 }, g);
+    el('line', { x1: cx - 16, x2: cx + 16, y1: py(m.media + m.desv), y2: py(m.media + m.desv), stroke: '#8E0C05', 'stroke-width': 3 }, g);
+    el('circle', { cx: cx, cy: py(m.media), r: 12, fill: '#8E0C05' }, g);
+    texto(m.media.toFixed(3), { x: cx + 22, y: py(m.media) + 6, 'font-size': 20, 'font-weight': 700, fill: '#210303' }, g);
+    texto(m.modelo, { x: cx, y: y0 + 30, 'text-anchor': 'middle', 'font-size': 20, fill: '#210303' }, svg);
+    g.addEventListener('click', function () {
+      while (capaFolds.firstChild) capaFolds.removeChild(capaFolds.firstChild);
+      m.folds.forEach(function (f, j) {
+        el('circle', { cx: cx - 40 + j * 20, cy: py(f), r: 6, fill: '#E04A0F' }, capaFolds);
+      });
+      lectura.textContent = m.modelo + ': folds ' + m.folds.map(function (f) { return f.toFixed(3); }).join(', ') +
+        '. Media ' + m.media.toFixed(3) + ', desviación ' + m.desv.toFixed(3) + ', configuración inicial ' + m.base.toFixed(3) + '.';
+    });
+  });
+})();
+
+/* ---------- 7: prueba 2024 ---------- */
+(function () {
+  var tabla = document.getElementById('tablaTest');
+  var orden = ['Logística', 'SVC RBF', 'MLP', 'Solo posición de salida'];
+  var filas = [];
+  function mostrarMatriz(t) {
+    document.getElementById('matriz').innerHTML =
+      '<div style="font-size: 22px; margin-bottom: 10px;">' + t.modelo + ': precision ' + t.prec.toFixed(3) + ', recall ' + t.rec.toFixed(3) + '</div>' +
+      '<div class="matriz">' +
+      '<div class="enc"></div><div class="enc">Predijo fuera</div><div class="enc">Predijo Top 10</div>' +
+      '<div class="enc">Quedó fuera</div><div class="bien">' + t.tn + '</div><div class="mal">' + t.fp + '</div>' +
+      '<div class="enc">Quedó en Top 10</div><div class="mal">' + t.fn + '</div><div class="bien">' + t.tp + '</div>' +
+      '</div>';
+  }
+  orden.forEach(function (nom) {
+    var t = D.test.filter(function (x) { return x.modelo == nom; })[0];
+    var tr = document.createElement('tr');
+    tr.className = 'clic';
+    var etiqueta = nom == 'Logística' ? 'Logística (elegida)' : nom;
+    tr.innerHTML = '<td>' + etiqueta + '</td><td>' + t.auc.toFixed(3) + '</td><td>' + (t.acc * 100).toFixed(1) + ' %</td>';
+    if (nom == 'Solo posición de salida') tr.style.fontStyle = 'italic';
+    tr.onclick = function () {
+      filas.forEach(function (f) { f.classList.remove('sel'); });
+      tr.classList.add('sel');
+      mostrarMatriz(t);
+    };
+    tabla.appendChild(tr);
+    filas.push(tr);
+  });
+  filas[0].onclick();
+})();
+
+/* ---------- 8: coeficientes ---------- */
+(function () {
+  var svg = document.getElementById('grafCoef');
+  var lectura = document.getElementById('lecturaCoef');
+  function dibujar(lista) {
+    while (svg.firstChild) svg.removeChild(svg.firstChild);
+    var xIzq = 300, ancho = 560, vmin = -0.95, vmax = 0.7;
+    var alto = 520 / lista.length;
+    var fuente = lista.length > 15 ? 10 : 16;
+    function px(v) { return xIzq + (v - vmin) / (vmax - vmin) * ancho; }
+    el('line', { x1: px(0), x2: px(0), y1: 0, y2: 525, stroke: '#888' }, svg);
+    for (var v = -0.8; v <= 0.61; v += 0.4) {
+      texto(v.toFixed(1), { x: px(v), y: 548, 'text-anchor': 'middle', 'font-size': 14, fill: '#6b4a47' }, svg);
+    }
+    lista.forEach(function (c, i) {
+      var y = i * alto + alto * 0.15;
+      var color = c.valor < 0 ? '#8E0C05' : '#2a7a2a';
+      var r = el('rect', { x: Math.min(px(0), px(c.valor)), y: y, width: Math.abs(px(c.valor) - px(0)), height: alto * 0.7, fill: color }, svg);
+      texto(c.nombre, { x: xIzq - 8, y: y + alto * 0.35 + fuente * 0.35, 'text-anchor': 'end', 'font-size': fuente, fill: '#210303' }, svg);
+      r.addEventListener('mouseenter', function () {
+        r.setAttribute('fill', '#E04A0F');
+        lectura.textContent = c.nombre + ': ' + c.valor.toFixed(3);
+      });
+      r.addEventListener('mouseleave', function () { r.setAttribute('fill', color); });
+    });
+  }
+  var ordenados = D.coef.slice().sort(function (a, b) { return b.valor - a.valor; });
+  var top = D.coef.slice().sort(function (a, b) { return Math.abs(b.valor) - Math.abs(a.valor); }).slice(0, 10);
+  top.sort(function (a, b) { return b.valor - a.valor; });
+  var bTop = document.getElementById('verTop');
+  var bTodas = document.getElementById('verTodas');
+  bTop.onclick = function () { bTop.classList.add('on'); bTodas.classList.remove('on'); dibujar(top); };
+  bTodas.onclick = function () { bTodas.classList.add('on'); bTop.classList.remove('on'); dibujar(ordenados); };
+  dibujar(top);
+})();
+
+/* ---------- 9: simulador ---------- */
+(function () {
+  var M = D.modelo;
+  var selP = document.getElementById('selPiloto');
+  var selE = document.getElementById('selEsc');
+  var rS = document.getElementById('rngSalida');
+  var rP = document.getElementById('rngPuntos');
+  var op = document.createElement('option');
+  op.value = '';
+  op.textContent = 'Piloto nuevo (sin historial)';
+  selP.appendChild(op);
+  D.pilotos2024.forEach(function (p) {
+    var o = document.createElement('option');
+    o.value = p.piloto;
+    o.textContent = p.piloto;
+    selP.appendChild(o);
+  });
+  D.esc2024.forEach(function (e) {
+    var o = document.createElement('option');
+    o.value = e;
+    o.textContent = e;
+    selE.appendChild(o);
+  });
+  selP.value = 'Lando Norris';
+  selE.value = 'McLaren';
+
+  function calcular() {
+    var s = parseFloat(rS.value);
+    var p = parseFloat(rP.value);
+    document.getElementById('txtSalida').textContent = s == 21 ? 'desde pits' : s;
+    document.getElementById('txtPuntos').textContent = p;
+    var z = M.b0;
+    z = z + M.b_salida * (s - M.media[0]) / M.desv[0];
+    z = z + M.b_puntos * (p - M.media[1]) / M.desv[1];
+    if (M.esc[selE.value] !== undefined) z = z + M.esc[selE.value];
+    if (M.pil[selP.value] !== undefined) z = z + M.pil[selP.value];
+    var prob = 1 / (1 + Math.exp(-z));
+    document.getElementById('prob').textContent = Math.round(prob * 100) + ' %';
+    document.getElementById('barraProb').style.width = (prob * 100) + '%';
+    document.getElementById('veredicto').textContent = prob >= 0.5 ? 'El modelo predice: Top 10' : 'El modelo predice: fuera del Top 10';
+  }
+  selP.onchange = function () {
+    D.pilotos2024.forEach(function (p) { if (p.piloto == selP.value) selE.value = p.esc; });
+    calcular();
+  };
+  selE.onchange = calcular;
+  rS.oninput = calcular;
+  rP.oninput = calcular;
+  calcular();
+})();
+
+slides[0].classList.add('activa');
+document.getElementById('contador').textContent = '1 / ' + slides.length;
+ajustar();
+</script>
+</body>
+</html>
